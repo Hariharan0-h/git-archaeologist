@@ -5,7 +5,6 @@ import {
   integer,
   timestamp,
   json,
-  vector,
   unique,
 } from "drizzle-orm/pg-core";
 
@@ -80,7 +79,8 @@ export const embeddings = pgTable("embeddings", {
   sourceType: text("source_type").notNull(), // "commit" | "pr" | "issue"
   sourceId: text("source_id").notNull(),
   chunkText: text("chunk_text").notNull(),
-  embedding: vector("embedding", { dimensions: 1536 }),
+  // stored as JSON-serialised number[] — swap to pgvector later
+  embedding: text("embedding"),
 });
 
 // ── Findings ───────────────────────────────────────────────────────────────

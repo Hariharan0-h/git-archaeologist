@@ -1,24 +1,28 @@
 /**
- * Embedding wrapper using OpenAI text-embedding-3-small.
- * Stored in pgvector (1536 dimensions).
+ * Embedding stub — uses keyword frequency vectors for MVP.
+ * Replace with a real embedding API when available.
  */
 
-import OpenAI from "openai";
+function tokenize(text: string): string[] {
+  return text.toLowerCase().match(/\b\w{3,}\b/g) ?? [];
+}
 
-const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+function buildVector(tokens: string[], vocab: string[]): number[] {
+  const freq: Record<string, number> = {};
+  for (const t of tokens) freq[t] = (freq[t] ?? 0) + 1;
+  return vocab.map((w) => freq[w] ?? 0);
+}
 
 export async function embed(text: string): Promise<number[]> {
-  const res = await openai.embeddings.create({
-    model: "text-embedding-3-small",
-    input: text.slice(0, 8000), // stay within token limits
-  });
-  return res.data[0].embedding;
+  // Build a simple term-frequency vector over the input tokens
+  const tokens = tokenize(text.slice(0, 8000));
+  const vocab = [...new Set(tokens)];
+  return buildVector(tokens, vocab);
 }
 
 export async function embedBatch(texts: string[]): Promise<number[][]> {
-  const res = await openai.embeddings.create({
-    model: "text-embedding-3-small",
-    input: texts.map((t) => t.slice(0, 8000)),
-  });
-  return res.data.map((d) => d.embedding);
+  // Build shared vocab across all texts for comparable vectors
+  const allTokens = texts.flatMap((t) => tokenize(t.slice(0, 8000)));
+  const vocab = [...new Set(allTokens)];
+  return texts.map((t) => buildVector(tokenize(t), vocab));
 }
